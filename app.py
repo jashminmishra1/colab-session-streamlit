@@ -1,11 +1,13 @@
-from udacity import get_file_content_as_string
+import SessionState
 import streamlit as st
 import utils
 import pandas as pd
 import time
+import models as models
 
 
 def main():
+
     st.write(''' # Machine Learning: A comparison of classification algorithms
     
     ---  
@@ -39,36 +41,33 @@ def main():
 
 def run_the_app():
 
-    # <div id = "uniqueDiv"></div>
-    # <script>
-    #     document.getElementById("#uniqueDiv").innerHTML = "Hello World!"
-    # </script>
-
-    main_panel = st.beta_container()
     sidebar = st.sidebar.beta_container()
-    model_builder_button = st.sidebar.empty()
+    main_panel = st.empty()
 
     sidebar.markdown('#### 1. Selects a dataset')
     dataset_selector = sidebar.selectbox('Select a dataset to proceed',
                                          ('Click here...', 'Diabetes.csv', 'Breast-Cancer.csv', 'Waveform.csv',
                                           'Image.csv', 'Segment.csv', 'Glass.csv', 'Heart.csv')
                                          )
-
+    flag = False
     if dataset_selector == 'Click here...':
         main_panel.success('Awaiting for user to select a dataset...')
     else:
         # Sidebar - Specify parameter settings
+        flag = True
+        v = sidebar.button(f'Visualize Dataset {dataset_selector}\n')
         with sidebar.markdown('#### 2. Set Parameters'):
             split_size = sidebar.slider(
                 'Data split ratio (% for Training Set)', 10, 90, 80, 5)
             seed_number = sidebar.slider(
                 'Set the random seed number', 1, 100, 42, 1)
 
-            model_builder_button.button('🔧 Build Models')
-
+            build = sidebar.button('🔧 Build Models')
+        st.write(f'#### Dataset: {dataset_selector}\n')
         dataset = utils.get_dataset(dataset_selector)
+
         print(dataset)
-        with main_panel:
+        with main_panel.beta_container():
             progress_bar = main_panel.progress(0)
             df = pd.read_csv(dataset)
 
@@ -84,8 +83,53 @@ def run_the_app():
             progress_bar.empty()
             message.empty()
 
-            main_panel.write(f'#### Dataset: {dataset_selector}\n')
             main_panel.write(df)
+
+    if flag:
+        if v:
+            main_panel.empty()
+            visualizer(df)
+        elif build:
+            build_model = st.beta_container()
+            build_model.subheader('1. Performance for {}'.format(
+                dataset.split('/')[-1]))
+            classificationReports = models.driver(dataset, 0.2)
+            counter = 1
+
+            for model in classificationReports:
+                build_model.write("**1.{}. {}**".format(str(counter), model))
+                build_model.write(classificationReports[model])
+                counter += 1
+
+
+def visualizer(df):
+    visualize = st.beta_container()
+    with visualize:
+        visualize.subheader('1. Dataset')
+        visualize.markdown('1.1. Glimpse of dataset')
+        visualize.write(df.head(10))
+
+        # Using all column except for the last column as X
+
+        X = df.iloc[:, :-1]
+        Y = df.iloc[:, -1]  # Selecting the last column as Y
+
+        visualize.markdown('1.2. Dataset dimension')
+        cols = visualize.beta_columns(2)
+        cols[0].write('X')
+        cols[0].info('{} rows, {} attributes'.format(
+            X.shape[0], X.shape[1]))
+        cols[1].write('Y')
+        cols[1].info('{} responses'.format(Y.shape[0]))
+
+        visualize.markdown('1.3. Variable details:')
+        visualize.write('X variables (first 20 are shown)')
+
+        attributes = list(X.columns[:20])
+        visualize.markdown('{}'.format(attributes))
+
+        visualize.write('Y variable')
+        visualize.markdown('{}'.format(Y.name))
 
 
 if __name__ == '__main__':
