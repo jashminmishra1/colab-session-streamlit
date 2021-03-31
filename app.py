@@ -46,6 +46,7 @@ def run_the_app():
 
     main_panel = st.beta_container()
     sidebar = st.sidebar.beta_container()
+    parameters_sidebar = st.sidebar.beta_container()
     model_builder_button = st.sidebar.empty()
 
     sidebar.markdown('#### 1. Selects a dataset')
@@ -55,37 +56,50 @@ def run_the_app():
                                          )
 
     if dataset_selector == 'Click here...':
-        main_panel.success('Awaiting for user to select a dataset...')
+        main_panel.info('Awaiting for user to select a dataset...')
     else:
         # Sidebar - Specify parameter settings
-        with sidebar.markdown('#### 2. Set Parameters'):
-            split_size = sidebar.slider(
+        with parameters_sidebar.markdown('#### 2. Set Parameters'):
+            split_size = parameters_sidebar.slider(
                 'Data split ratio (% for Training Set)', 10, 90, 80, 5)
-            seed_number = sidebar.slider(
+            seed_number = parameters_sidebar.slider(
                 'Set the random seed number', 1, 100, 42, 1)
 
-            model_builder_button.button('🔧 Build Models')
+            dataset_selection_status = model_builder_button.button(
+                '🔧 Build Models')
 
         dataset = utils.get_dataset(dataset_selector)
         print(dataset)
         with main_panel:
-            progress_bar = main_panel.progress(0)
             df = pd.read_csv(dataset)
 
             percent_complete = 1
 
+            message = main_panel.empty()
+            message.info(
+                f'Fetching {dataset_selector}')
+            progress_bar = main_panel.progress(0)
+
             for percent_complete in range(100):
                 progress_bar.progress(percent_complete + 1)
+                time.sleep(0.005)
+
             time.sleep(0.5)
-            message = main_panel.success(
+
+            progress_bar.empty()
+            message.success(
                 f'Successfully loaded {dataset_selector}')
 
             time.sleep(1)
-            progress_bar.empty()
+
             message.empty()
 
             main_panel.write(f'#### Dataset: {dataset_selector}\n')
             main_panel.write(df)
+
+            # Logic when button is clicked
+            if dataset_selection_status:
+                parameters_sidebar.empty()
 
 
 if __name__ == '__main__':
