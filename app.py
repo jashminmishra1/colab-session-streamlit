@@ -43,6 +43,9 @@ def run_the_app():
 
     sidebar = st.sidebar.beta_container()
     main_panel = st.empty()
+    parameters_sidebar = st.sidebar.beta_container()
+    model_builder_button = st.sidebar.empty()
+
 
     sidebar.markdown('#### 1. Selects a dataset')
     dataset_selector = sidebar.selectbox('Select a dataset to proceed',
@@ -51,39 +54,64 @@ def run_the_app():
                                          )
     flag = False
     if dataset_selector == 'Click here...':
-        main_panel.success('Awaiting for user to select a dataset...')
+        main_panel.info('Awaiting for user to select a dataset...')
     else:
         # Sidebar - Specify parameter settings
+
         flag = True
         v = sidebar.button(f'Visualize Dataset {dataset_selector}\n')
         with sidebar.markdown('#### 2. Set Parameters'):
             split_size = sidebar.slider(
+
+        with parameters_sidebar.markdown('#### 2. Set Parameters'):
+            split_size = parameters_sidebar.slider(
+
                 'Data split ratio (% for Training Set)', 10, 90, 80, 5)
-            seed_number = sidebar.slider(
+            seed_number = parameters_sidebar.slider(
                 'Set the random seed number', 1, 100, 42, 1)
+
 
             build = sidebar.button('🔧 Build Models')
         st.write(f'#### Dataset: {dataset_selector}\n')
+
+            dataset_selection_status = model_builder_button.button(
+                '🔧 Build Models')
+
+
         dataset = utils.get_dataset(dataset_selector)
 
         print(dataset)
+
         with main_panel.beta_container():
             progress_bar = main_panel.progress(0)
+
+        with main_panel:
+
             df = pd.read_csv(dataset)
 
             percent_complete = 1
 
+            message = main_panel.empty()
+            message.info(
+                f'Fetching {dataset_selector}')
+            progress_bar = main_panel.progress(0)
+
             for percent_complete in range(100):
                 progress_bar.progress(percent_complete + 1)
+                time.sleep(0.005)
+
             time.sleep(0.5)
-            message = main_panel.success(
+
+            progress_bar.empty()
+            message.success(
                 f'Successfully loaded {dataset_selector}')
 
             time.sleep(1)
-            progress_bar.empty()
+
             message.empty()
 
             main_panel.write(df)
+
 
     if flag:
         if v:
@@ -130,6 +158,10 @@ def visualizer(df):
 
         visualize.write('Y variable')
         visualize.markdown('{}'.format(Y.name))
+            # Logic when button is clicked
+            if dataset_selection_status:
+                parameters_sidebar.empty()
+
 
 
 if __name__ == '__main__':
